@@ -6,8 +6,7 @@ const path = require('path');
 exports.uploadFile = async (req, res) => {
   try {
     const file = req.file;
-    const microserviceInstanceId = req.headers['x-microservice-id'];
-
+    const microserviceInstanceId = req.params.microserviceInstanceId;
     if (!microserviceInstanceId) {
       return res.status(400).send('Missing microservice instance ID');
     }
@@ -15,10 +14,11 @@ exports.uploadFile = async (req, res) => {
     const bucket = firebaseAdmin.storage().bucket();
     const folderPath = `uploads/${microserviceInstanceId}`;
     const uploadFile = bucket.file(`${folderPath}/${file.originalname}`);
+
     const stream = uploadFile.createWriteStream({
       metadata: {
-        contentType: file.mimetype
-      }
+        contentType: file.mimetype,
+      },
     });
 
     stream.on('error', (err) => {
@@ -45,10 +45,8 @@ exports.downloadFile = async (req, res) => {
     const bucket = firebaseAdmin.storage().bucket();
     const file = bucket.file(`uploads/${microserviceInstanceId}/${filePath}`);
     const [metadata] = await file.getMetadata();
-
     res.set('Content-Type', metadata.contentType);
     res.set('Content-Disposition', `inline; filename="${path.basename(filePath)}"`);
-
     const stream = file.createReadStream();
     stream.pipe(res);
   } catch (err) {
