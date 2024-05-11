@@ -10,7 +10,7 @@ const firebaseConfig = {
   appId: "1:135379430269:web:d0457cc4d782f1fb7c7a14"
 };
 
-const serviceAccount =require('.src/service_account.json');
+const serviceAccount =require('./service_account.json');
 
 // Initialize Firebase Admin SDK
 firebaseAdmin.initializeApp({
