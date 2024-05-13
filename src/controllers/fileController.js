@@ -5,36 +5,41 @@ const path = require('path');
 
 exports.uploadFile = async (req, res) => {
   try {
-    const file = req.file;
+    const files = req.files;
     const microserviceInstanceId = req.params.microserviceInstanceId;
     if (!microserviceInstanceId) {
       return res.status(400).send('Missing microservice instance ID');
     }
-
     const bucket = firebaseAdmin.storage().bucket();
     const folderPath = `uploads/${microserviceInstanceId}`;
-    const uploadFile = bucket.file(`${folderPath}/${file.originalname}`);
+    const uploadPromises = files.map(async (file) => {
+      const timestamp = Date.now();
+      const extension = path.extname(file.originalname);
+      const uniqueFilename = `${path.basename(file.originalname, extension)}_${timestamp}${extension}`;
 
-    const stream = uploadFile.createWriteStream({
-      metadata: {
-        contentType: file.mimetype,
-      },
+      const uploadFile = bucket.file(`${folderPath}/${uniqueFilename}`);
+      const stream = uploadFile.createWriteStream({
+        metadata: {
+          contentType: file.mimetype,
+        },
+      });
+      return new Promise((resolve, reject) => {
+        stream.on('error', (err) => {
+          console.error(err);
+          reject(err);
+        });
+        stream.on('finish', async () => {
+          await uploadFile.makePublic();
+          resolve(` ${uploadFile.publicUrl()}`);
+        });
+        stream.end(file.buffer);
+      });
     });
-
-    stream.on('error', (err) => {
-      console.error(err);
-      res.status(500).send('Error uploading file');
-    });
-
-    stream.on('finish', async () => {
-      await uploadFile.makePublic();
-      res.send(`File uploaded: ${uploadFile.publicUrl()}`);
-    });
-
-    stream.end(file.buffer);
+    const uploadResults = await Promise.all(uploadPromises);
+    res.send(uploadResults);
   } catch (err) {
     console.error(err);
-    res.status(500).send('Error uploading file');
+    res.status(500).send('Error uploading files');
   }
 };
 
