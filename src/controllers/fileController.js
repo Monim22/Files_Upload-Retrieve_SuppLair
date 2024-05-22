@@ -10,7 +10,7 @@ exports.uploadFile = async (req, res) => {
       return res.status(400).send("Missing microservice instance ID");
     }
     const bucket = firebaseAdmin.storage().bucket();
-    const folderPath = `uploads/${microserviceInstanceId}`;
+    const folderPath = `${microserviceInstanceId}`;
     const uploadPromises = files.map(async (file) => {
       const timestamp = Date.now();
       const extension = path.extname(file.originalname);
