@@ -29,7 +29,7 @@ exports.uploadFile = async (req, res) => {
         });
         stream.on("finish", async () => {
           await uploadFile.makePublic();
-          resolve(` ${uploadFile.publicUrl()}`);
+          resolve(`${uploadFile.publicUrl()}`);
         });
         stream.end(file.buffer);
       });
